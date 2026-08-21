@@ -1,0 +1,86 @@
+# name: test/sql/read_folded.test
+# description: read_folded table function
+# group: [quack_flamegraph]
+
+require quack_flamegraph
+
+# Template hello-world functions must not ship.
+statement error
+SELECT rusty_echo('x');
+----
+Catalog Error
+
+statement error
+SELECT rusty_quack('Sam');
+----
+Catalog Error
+
+query I
+SELECT function_name FROM duckdb_functions() WHERE function_name = 'read_folded';
+----
+read_folded
+
+# Zero-sample parent frames are dropped; remaining samples sum to 35.
+query I
+SELECT SUM(samples)::BIGINT FROM read_folded('test/data/tiny.folded');
+----
+35
+
+query II
+SELECT list_extract(frames, -1) AS leaf, samples FROM read_folded('test/data/tiny.folded') ORDER BY leaf;
+----
+bar	20
+foo	10
+leaf	5
+
+query II
+SELECT list_extract(frames, -1) AS leaf, SUM(samples)::BIGINT AS exclusive
+FROM read_folded('test/data/tiny.folded')
+GROUP BY 1
+ORDER BY exclusive DESC, leaf;
+----
+bar	20
+foo	10
+leaf	5
+
+query II
+SELECT frame, SUM(samples)::BIGINT AS inclusive
+FROM (
+    SELECT unnest(frames) AS frame, samples
+    FROM read_folded('test/data/tiny.folded')
+)
+GROUP BY 1
+ORDER BY inclusive DESC, frame;
+----
+main	30
+bar	20
+foo	10
+leaf	5
+root	5
+
+query II
+SELECT leaf, exclusive FROM flamegraph_exclusive('test/data/tiny.folded') ORDER BY exclusive DESC, leaf;
+----
+bar	20
+foo	10
+leaf	5
+
+query II
+SELECT frame, inclusive FROM flamegraph_inclusive('test/data/tiny.folded') ORDER BY inclusive DESC, frame;
+----
+main	30
+bar	20
+foo	10
+leaf	5
+root	5
+
+statement error
+SELECT * FROM read_folded('test/data/does-not-exist.folded');
+----
+IO Error
+
+# Missing count is a scan/bind failure.
+statement error
+SELECT * FROM read_folded('test/data/bad.folded');
+----
+Invalid Input Error

@@ -1,7 +1,10 @@
 [package]
-name = "rusty_quack"
+name = "quack_flamegraph"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+description = "DuckDB extension for querying Brendan Gregg folded CPU/allocation profiles"
+repository = "https://github.com/kevintruong/quack-flamegraph"
 
 [lib]
 crate-type = ["cdylib"]
@@ -15,9 +18,9 @@ strip = true
 # src/wasm_lib.rs forwards to src/lib.rs so that we can change from cdylib
 # (that is needed while compiling natively) to staticlib (needed since the
 # actual linking will be done via emcc
-name = "rusty_quack"
+name = "quack_flamegraph"
 path = "src/wasm_lib.rs"
 crate-type = ["staticlib"]
 
 [dependencies]
-duckdb = { version = "~1.10505.0", features = ["loadable-extension", "vscalar"] }
+duckdb = { version = "~1.10505.0", features = ["loadable-extension"] }

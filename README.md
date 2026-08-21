@@ -1,130 +1,63 @@
-# DuckDB Rust extension template
-This is an **experimental** template for Rust based extensions based on the C Extension API of DuckDB. The goal is to
-turn this eventually into a stable basis for pure-Rust DuckDB extensions that can be submitted to the Community extensions
-repository
+# quack_flamegraph
 
-Features:
-- No DuckDB build required
-- No C++ or C code required
-- CI/CD chain preconfigured
-- (Coming soon) Works with community extensions
+DuckDB extension for querying [Brendan Gregg folded](https://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html) CPU/allocation profiles as tables.
 
-## Cloning
+```sql
+INSTALL quack_flamegraph FROM community;  -- after community listing
+LOAD quack_flamegraph;
 
-Clone the repo with submodules
-
-```shell
-git clone --recurse-submodules <repo>
+SELECT leaf, exclusive
+FROM flamegraph_exclusive('cpu.folded')
+ORDER BY exclusive DESC
+LIMIT 10;
 ```
 
-## Dependencies
-In principle, these extensions can be compiled with the Rust toolchain alone. However, this template relies on some additional
-tooling to make life a little easier and to be able to share CI/CD infrastructure with extension templates for other languages:
+Until the [community-extensions](https://github.com/duckdb/community-extensions) listing exists, load a local build (DuckDB **v1.5.5**, unsigned):
 
-- Python3
-- Python3-venv
-- [Make](https://www.gnu.org/software/make)
-- Git
+```sql
+LOAD './build/debug/extension/quack_flamegraph/quack_flamegraph.duckdb_extension';
 
-Installing these dependencies will vary per platform:
-- For Linux, these come generally pre-installed or are available through the distro-specific package manager.
-- For MacOS, [homebrew](https://formulae.brew.sh/).
-- For Windows, [chocolatey](https://community.chocolatey.org/).
+SELECT * FROM read_folded('test/data/tiny.folded');
+SELECT * FROM flamegraph_exclusive('test/data/tiny.folded');
+SELECT * FROM flamegraph_inclusive('test/data/tiny.folded');
+```
 
-## Building
-After installing the dependencies, building is a two-step process. Firstly run:
+## Functions
+
+| Function | Kind | Result |
+|---|---|---|
+| `read_folded(path)` | table | `frames VARCHAR[]`, `samples BIGINT`, `source VARCHAR` |
+| `flamegraph_exclusive(path)` | table macro | `leaf`, `exclusive` |
+| `flamegraph_inclusive(path)` | table macro | `frame`, `inclusive` (unnest sample coverage) |
+
+Parser rules (DuckDB `read_*` ingest style): last space-separated field is the sample count; `samples = 0` lines are dropped; optional Instruments `Thread_…:` prefix is stripped; missing file → `IO Error`; malformed line → `Invalid Input Error`.
+
+For recursive frames, unique-stack coverage is `list_contains(frames, name)` rather than `flamegraph_inclusive`.
+
+## Build
+
+Clone with submodules, then:
+
 ```shell
+git clone --recurse-submodules https://github.com/kevintruong/quack-flamegraph.git
+cd quack-flamegraph
 make configure
-```
-This will ensure a Python venv is set up with DuckDB and DuckDB's test runner installed. Additionally, depending on configuration,
-DuckDB will be used to determine the correct platform for which you are compiling.
-
-Then, to build the extension run:
-```shell
-make debug
-```
-This delegates the build process to cargo, which will produce a shared library in `target/debug/<shared_lib_name>`. After this step,
-a script is run to transform the shared library into a loadable extension by appending a binary footer. The resulting extension is written
-to the `build/debug` directory.
-
-To create optimized release binaries, simply run `make release` instead.
-
-### Running the extension
-To run the extension code, start `duckdb` with `-unsigned` flag. This will allow you to load the local extension file.
-
-```sh
-duckdb -unsigned
-```
-
-After loading the extension by the file path, you can use the functions provided by the extension. This template registers
-the `rusty_echo()` scalar function and the `rusty_quack()` table function.
-
-```sql
-LOAD './build/debug/extension/rusty_quack/rusty_quack.duckdb_extension';
-SELECT rusty_echo('Jane');
-```
-
-```
-┌─────────────────────┐
-│ rusty_echo('Jane')  │
-│       varchar       │
-├─────────────────────┤
-│ 🐤 Jane 🦀 Jane     │
-└─────────────────────┘
-```
-
-```sql
-SELECT * FROM rusty_quack('Jane');
-```
-
-```
-┌─────────────────────┐
-│       column0       │
-│       varchar       │
-├─────────────────────┤
-│ Rusty Quack Jane 🐥 │
-└─────────────────────┘
-```
-
-## Testing
-This extension uses the DuckDB Python client for testing. This should be automatically installed in the `make configure` step.
-The tests themselves are written in the SQLLogicTest format, just like most of DuckDB's tests. A sample test can be found in
-`test/sql/<extension_name>.test`. To run the tests using the *debug* build:
-
-```shell
-make test_debug
-```
-
-or for the *release* build:
-```shell
-make test_release
-```
-
-### Version switching
-Testing with different DuckDB versions is really simple:
-
-First, run
-```
-make clean_all
-```
-to ensure the previous `make configure` step is deleted.
-
-Then, run
-```
-DUCKDB_TEST_VERSION=v1.3.2 make configure
-```
-to select a different duckdb version to test with
-
-Finally, build and test with
-```
 make debug
 make test_debug
 ```
 
-### Known issues
-This is a bit of a footgun, but the extensions produced by this template may (or may not) be broken on windows on python3.11
-with the following error on extension load:
-```shell
-IO Error: Extension '<name>.duckdb_extension' could not be loaded: The specified module could not be found
-```
-This was resolved by using python 3.12
+Release binaries: `make release`.
+
+Requires Python 3, Make, Git, and a Rust toolchain. The extension is a pure-Rust C Extension API module (no DuckDB C++ rebuild).
+
+## Community listing
+
+Canonical descriptor to copy into a PR on [duckdb/community-extensions](https://github.com/duckdb/community-extensions) (`extensions/quack_flamegraph/description.yml`):
+
+[`community/description.yml`](community/description.yml)
+
+Extension name is `quack_flamegraph` (lowercase `[a-z0-9_]`). Pin `repo.ref` to a git tag or SHA before opening that PR.
+
+## License
+
+MIT
