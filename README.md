@@ -28,11 +28,14 @@ SELECT * FROM flamegraph_inclusive('test/data/tiny.folded');
 |---|---|---|
 | `read_folded(path)` | table | `frames VARCHAR[]`, `samples BIGINT`, `source VARCHAR` |
 | `flamegraph_exclusive(path)` | table macro | `leaf`, `exclusive` |
-| `flamegraph_inclusive(path)` | table macro | `frame`, `inclusive` (unnest sample coverage) |
+| `flamegraph_inclusive(path)` | table macro | `frame`, `inclusive` (unnest; recursive names inflate) |
+| `flamegraph_coverage(path)` | table macro | `frame`, `coverage`, `n_stacks` (once per stack) |
+| `flamegraph_edges(path)` | table macro | `parent`, `child`, `samples` |
+| `flamegraph_hot_stacks(path)` | table macro | `samples`, `depth`, `leaf`, `frames` |
 
 Parser rules (DuckDB `read_*` ingest style): last space-separated field is the sample count; `samples = 0` lines are dropped; optional Instruments `Thread_…:` prefix is stripped; missing file → `IO Error`; malformed line → `Invalid Input Error`.
 
-For recursive frames, unique-stack coverage is `list_contains(frames, name)` rather than `flamegraph_inclusive`.
+For recursive frames use `flamegraph_coverage`, not `flamegraph_inclusive`. On the Spur/Turso profile, `collect_symbol_tokens` is 51% unnest-inclusive and **4.5% coverage**.
 
 ## Build
 

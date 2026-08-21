@@ -1,0 +1,52 @@
+# name: test/sql/flamegraph_diagnostics.test
+# description: coverage / edges / hot_stacks macros for runtime-flaw finding
+# group: [quack_flamegraph]
+
+require quack_flamegraph
+
+# Unique-stack coverage must not inflate recursive frames.
+# inclusive(b)=30 (unnest 3 times); coverage(b)=10 (once per stack).
+query III
+SELECT frame, coverage, n_stacks
+FROM flamegraph_coverage('test/data/recursive.folded')
+ORDER BY coverage DESC, frame;
+----
+a	15	2
+b	10	1
+c	5	1
+
+query II
+SELECT frame, inclusive
+FROM flamegraph_inclusive('test/data/recursive.folded')
+ORDER BY inclusive DESC, frame;
+----
+b	30
+a	15
+c	5
+
+query I
+SELECT round(i.inclusive * 1.0 / c.coverage, 2)
+FROM flamegraph_coverage('test/data/recursive.folded') c
+JOIN flamegraph_inclusive('test/data/recursive.folded') i USING (frame)
+WHERE c.frame = 'b';
+----
+3.00
+
+# Call edges: recursive self-edge b->b plus a->b and a->c.
+query III
+SELECT parent, child, samples
+FROM flamegraph_edges('test/data/recursive.folded')
+ORDER BY samples DESC, parent, child;
+----
+b	b	20
+a	b	10
+a	c	5
+
+# Fat stacks: largest sample first.
+query II
+SELECT samples, leaf
+FROM flamegraph_hot_stacks('test/data/recursive.folded')
+ORDER BY samples DESC, leaf;
+----
+10	b
+5	c

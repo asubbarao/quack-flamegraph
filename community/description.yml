@@ -45,7 +45,10 @@ docs:
 
     - `read_folded(path)` — table function returning `frames VARCHAR[]`, `samples BIGINT`, `source VARCHAR`
     - `flamegraph_exclusive(path)` — leaf self-time (`GROUP BY` last frame)
-    - `flamegraph_inclusive(path)` — sample coverage via `unnest(frames)` (recursive names are inflated; use `list_contains` for unique-stack coverage)
+    - `flamegraph_inclusive(path)` — `unnest(frames)` (recursive names inflate)
+    - `flamegraph_coverage(path)` — unique-stack sample presence (`list_distinct`)
+    - `flamegraph_edges(path)` — parent→child sample mass
+    - `flamegraph_hot_stacks(path)` — stacks ordered for concentration checks
 
     The parser drops zero-sample parent frames (common in Instruments/sample collapse), takes the last space-separated field as the count, and strips an optional `Thread_…:` prefix.
 
