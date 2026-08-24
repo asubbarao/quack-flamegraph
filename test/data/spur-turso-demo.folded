@@ -1,0 +1,11 @@
+Thread_1:;main;git_walk::run_full_walk_into;git_walk::symbol_changes_for_commit;git_walk::cached_extract;extract::tree_sitter::BytesExtractor::extract;extract::tree_sitter::run_query;ts_node_parent;ts_node_child_with_descendant;ts_node_child_iterator_next 2470
+Thread_1:;main;git_walk::run_full_walk_into;git_walk::symbol_changes_for_commit;git_walk::cached_extract;extract::tree_sitter::BytesExtractor::extract;extract::tree_sitter::run_query;ts_node_parent;ts_node_child_with_descendant 1300
+Thread_1:;main;git_walk::run_full_walk_into;git_walk::symbol_changes_for_commit;git_walk::cached_extract;extract::tree_sitter::BytesExtractor::extract;extract::tree_sitter::run_query;StreamingIterator::advance;ts_query_cursor_next_match 1000
+Thread_1:;main;git_walk::run_full_walk_into;git_walk::symbol_changes_for_commit;git_walk::cached_extract;extract::tree_sitter::BytesExtractor::extract;extract::tree_sitter::run_query;ts_node_parent 130
+Thread_1:;main;git_walk::run_full_walk_into;build_full_artifact_for_graph_build;extract::tree_sitter::build_facts;extract::tree_sitter::extract_files;extract::tree_sitter::extract_file_contents_from_tree;ts_parser_parse_with_options;ts_parser_parse 1190
+Thread_1:;main;git_walk::run_full_walk_into;build_full_artifact_for_graph_build;store::build::artifact_from_facts;store::build::buckets_from_facts 960
+Thread_1:;main;git_walk::run_full_walk_into;extract::tree_sitter::contained_capture_text 700
+Thread_1:;main;git_walk::run_full_walk_into;extract::collect_symbol_tokens;extract::collect_symbol_tokens;extract::collect_symbol_tokens 450
+Thread_1:;main;git_walk::run_full_walk_into;git_walk::symbol_changes_for_commit 640
+main;other_work 1160
+Thread_1:;parent_only 0
